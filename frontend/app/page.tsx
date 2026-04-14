@@ -3,216 +3,274 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Star, RefreshCw, BookOpen, TrendingUp, Filter } from "lucide-react";
+import { Search, BookOpen, SlidersHorizontal, X, RotateCw } from "lucide-react";
 import { api, Book } from "@/lib/api";
 
-const GENRES = ["Fiction", "Mystery", "Thriller", "Romance", "Science Fiction", "Fantasy", "Horror", "Biography", "Self-Help", "Children", "Poetry", "Classics", "Crime", "Adventure", "Philosophy", "Science"];
-const SENTIMENTS = ["positive", "neutral", "negative"];
-
-const sentimentColors: Record<string, string> = {
-  positive: "text-green-400 bg-green-400/10",
-  neutral: "text-yellow-400 bg-yellow-400/10",
-  negative: "text-red-400 bg-red-400/10",
-};
-
-function StarRating({ rating }: { rating: string | null }) {
-  if (!rating) return <span className="text-gray-500 text-xs">No rating</span>;
-  const num = parseFloat(rating);
-  return (
-    <div className="flex items-center gap-1">
-      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-      <span className="text-yellow-400 text-sm font-medium">{num.toFixed(1)}</span>
-    </div>
-  );
-}
+const GENRES = ["Fiction","Mystery","Thriller","Romance","Science Fiction","Fantasy","Horror","Biography","Self-Help","Children","Poetry","Classics","Crime","Adventure","Philosophy","Science"];
+const SENTIMENTS = ["positive","neutral","negative"];
 
 function BookCard({ book }: { book: Book }) {
+  const rating = book.rating ? parseFloat(book.rating) : null;
+
   return (
     <Link href={`/books/${book.id}`}>
-      <div className="group bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200 h-full flex flex-col">
-        <div className="relative aspect-[2/3] bg-gray-800 overflow-hidden">
+      <article className="book-card surface rounded-xl overflow-hidden flex flex-col h-full cursor-pointer">
+        {/* Cover */}
+        <div className="relative overflow-hidden" style={{ aspectRatio: "2/3", background: "#0d0b09" }}>
           {book.cover_image_url ? (
-            <Image
-              src={book.cover_image_url}
-              alt={book.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              unoptimized
-            />
+            <Image src={book.cover_image_url} alt={book.title} fill className="object-cover" unoptimized />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="w-12 h-12 text-gray-600" />
+            <div className="w-full h-full flex items-center justify-center" style={{ background: "#161210" }}>
+              <BookOpen className="w-8 h-8" style={{ color: "#4a3f30" }} />
             </div>
           )}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,7,5,0.85) 0%, transparent 50%)" }} />
+
+          {/* Genre badge */}
           {book.ai_genre && (
-            <span className="absolute top-2 left-2 bg-indigo-600/90 text-white text-xs px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">
-              {book.ai_genre}
-            </span>
+            <div className="absolute top-2 left-2">
+              <span className="genre-badge px-2 py-0.5 rounded-sm text-[10px] font-display uppercase tracking-wider">
+                {book.ai_genre}
+              </span>
+            </div>
+          )}
+
+          {/* Rating */}
+          {rating && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1">
+              <span style={{ color: "#e8b96a", fontSize: "11px", fontFamily: "'Crimson Pro', serif", fontWeight: 600 }}>
+                ★ {rating.toFixed(1)}
+              </span>
+            </div>
+          )}
+
+          {/* Sentiment */}
+          {book.sentiment && (
+            <div className={`absolute bottom-2.5 right-2.5 w-2 h-2 rounded-full border ${
+              book.sentiment === "positive" ? "bg-teal-400 border-teal-300/30" :
+              book.sentiment === "negative" ? "border-rose-400/30" : "border-amber-600/30"
+            }`}
+            style={book.sentiment === "negative" ? { background: "#8b2635" } :
+                   book.sentiment === "neutral"  ? { background: "#4a3f30" } : {}} />
           )}
         </div>
-        <div className="p-4 flex flex-col gap-2 flex-1">
-          <h3 className="font-semibold text-sm text-white leading-tight line-clamp-2 group-hover:text-indigo-300 transition-colors">
+
+        {/* Info */}
+        <div className="p-3 flex flex-col gap-0.5 flex-1">
+          <p className="font-display text-xs font-bold leading-snug line-clamp-2" style={{ color: "#f0e2c0" }}>
             {book.title}
-          </h3>
-          {book.author && <p className="text-gray-400 text-xs">{book.author}</p>}
-          <div className="flex items-center justify-between mt-auto pt-2">
-            <StarRating rating={book.rating} />
-            {book.sentiment && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${sentimentColors[book.sentiment] || "text-gray-400"}`}>
-                {book.sentiment}
-              </span>
-            )}
+          </p>
+          {book.author && (
+            <p className="font-serif text-[11px] truncate" style={{ color: "#4a3f30" }}>{book.author}</p>
+          )}
+          <div className="flex items-center justify-between mt-auto pt-1.5" style={{ borderTop: "1px solid rgba(212,175,100,0.06)" }}>
+            {book.ai_genre
+              ? <span className="font-serif text-[10px]" style={{ color: "#c9913a" }}>{book.ai_genre}</span>
+              : <span />}
+            {book.price && <span className="font-serif text-[11px]" style={{ color: "#a89070" }}>£{book.price}</span>}
           </div>
-          {book.price && <p className="text-indigo-400 text-sm font-semibold">£{book.price}</p>}
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
 
-export default function DashboardPage() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [count, setCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [genre, setGenre] = useState("");
+function SkeletonCard() {
+  return (
+    <div className="surface rounded-xl overflow-hidden">
+      <div className="skeleton" style={{ aspectRatio: "2/3" }} />
+      <div className="p-3 space-y-2">
+        <div className="skeleton h-3 rounded w-4/5" />
+        <div className="skeleton h-2.5 rounded w-2/5" />
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [books, setBooks]       = useState<Book[]>([]);
+  const [count, setCount]       = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
+  const [genre, setGenre]       = useState("");
   const [sentiment, setSentiment] = useState("");
   const [ordering, setOrdering] = useState("-created_at");
-  const [page, setPage] = useState(1);
+  const [page, setPage]         = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const [scraping, setScraping] = useState(false);
 
   const fetchBooks = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { page: String(page), page_size: "20" };
-      if (search) params.search = search;
-      if (genre) params.genre = genre;
-      if (sentiment) params.sentiment = sentiment;
-      if (ordering) params.ordering = ordering;
-      const data = await api.books.list(params);
+      const p: Record<string, string> = { page: String(page), page_size: "24" };
+      if (search)   p.search   = search;
+      if (genre)    p.genre    = genre;
+      if (sentiment) p.sentiment = sentiment;
+      if (ordering) p.ordering = ordering;
+      const data = await api.books.list(p);
       setBooks(data.results);
       setCount(data.count);
-      setTotalPages(Math.ceil(data.count / 20));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+      setTotalPages(Math.ceil(data.count / 24));
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   }, [search, genre, sentiment, ordering, page]);
 
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); fetchBooks(); };
-
-  const triggerScrape = async () => {
-    setScraping(true);
-    try {
-      await api.books.scrape(5);
-      alert("Scrape started! Refresh in a minute to see new books.");
-    } catch { alert("Failed to start scrape."); }
-    finally { setScraping(false); }
-  };
+  const hasFilters = search || genre || sentiment;
+  const clearFilters = () => { setSearch(""); setGenre(""); setSentiment(""); setPage(1); };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8">
+
+      {/* ── Page header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
         <div>
-          <h1 className="text-2xl font-bold text-white">Book Library</h1>
-          <p className="text-gray-400 text-sm mt-1">{count} books in collection</p>
+          <p className="chapter-num mb-1">— Bibliotheca Digitalis —</p>
+          <h1 className="font-display text-4xl font-black" style={{ color: "#f0e2c0", lineHeight: 1.1 }}>
+            The Catalogue
+          </h1>
+          <p className="font-serif mt-1.5" style={{ color: "#4a3f30", fontSize: "15px" }}>
+            {count.toLocaleString()} volumes indexed &ensp;·&ensp; AI-illuminated
+          </p>
         </div>
-        <button onClick={triggerScrape} disabled={scraping}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <RefreshCw className={`w-4 h-4 ${scraping ? "animate-spin" : ""}`} />
-          {scraping ? "Scraping…" : "Scrape More Books"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/qa" className="btn-gold font-display text-sm px-5 py-2.5 rounded-lg flex items-center gap-2">
+            ✦ Consult the Oracle
+          </Link>
+          <button
+            onClick={() => { setScraping(true); api.books.scrape(5).then(() => alert("Acquisition started!")).catch(() => {}).finally(() => setScraping(false)); }}
+            disabled={scraping}
+            className="surface rounded-lg px-3 py-2.5 font-serif text-sm flex items-center gap-1.5 transition-all hover:border-[rgba(212,175,100,0.2)] disabled:opacity-40"
+            style={{ color: "#a89070" }}>
+            <RotateCw className={`w-3.5 h-3.5 ${scraping ? "animate-spin" : ""}`} />
+            Acquire
+          </button>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* ── Stats ledger ── */}
+      <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "Total Books", value: count, icon: <BookOpen className="w-5 h-5 text-indigo-400" /> },
-          { label: "With AI Insights", value: books.filter(b => b.summary).length, icon: <TrendingUp className="w-5 h-5 text-green-400" /> },
-          { label: "Embedded for RAG", value: books.filter(b => b.is_embedded).length, icon: <Star className="w-5 h-5 text-yellow-400" /> },
-          { label: "Genres Found", value: [...new Set(books.map(b => b.ai_genre).filter(Boolean))].length, icon: <Filter className="w-5 h-5 text-pink-400" /> },
-        ].map((s) => (
-          <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-            {s.icon}
-            <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-gray-400 text-xs">{s.label}</p>
-            </div>
+          { v: count,                                             l: "Volumes",    n: "I"   },
+          { v: books.filter(b => b.summary).length,              l: "Illuminated",n: "II"  },
+          { v: books.filter(b => b.is_embedded).length,          l: "Indexed",    n: "III" },
+          { v: [...new Set(books.map(b=>b.ai_genre).filter(Boolean))].length, l: "Genres", n: "IV"  },
+        ].map(s => (
+          <div key={s.l} className="surface-raised rounded-xl p-4" style={{ borderColor: "rgba(212,175,100,0.12)" }}>
+            <p className="chapter-num text-[9px] mb-1">{s.n}</p>
+            <p className="font-display text-2xl font-black" style={{ color: "#e8b96a" }}>{s.v}</p>
+            <p className="font-serif text-xs mt-0.5" style={{ color: "#4a3f30" }}>{s.l}</p>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" placeholder="Search by title or author…" value={search}
+      {/* ── Search ── */}
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#4a3f30" }} />
+            <input
+              value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500" />
+              onKeyDown={e => e.key === "Enter" && (setPage(1), fetchBooks())}
+              placeholder="Search the catalogue…"
+              className="tome-input w-full rounded-xl pl-10 pr-4 py-3 text-sm"
+            />
           </div>
-          <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition-colors">Search</button>
-        </form>
-        <div className="flex flex-wrap gap-3">
-          <select value={genre} onChange={e => { setGenre(e.target.value); setPage(1); }}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-            <option value="">All Genres</option>
-            {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <select value={sentiment} onChange={e => { setSentiment(e.target.value); setPage(1); }}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-            <option value="">All Sentiments</option>
-            {SENTIMENTS.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
-          </select>
-          <select value={ordering} onChange={e => { setOrdering(e.target.value); setPage(1); }}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-            <option value="-created_at">Newest First</option>
-            <option value="-rating">Highest Rated</option>
-            <option value="rating">Lowest Rated</option>
-            <option value="title">Title A–Z</option>
-            <option value="price">Price Low–High</option>
-          </select>
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`rounded-xl px-4 py-3 text-sm font-serif flex items-center gap-1.5 transition-all ${
+              showFilters
+                ? "border border-[rgba(201,145,58,0.35)] bg-[rgba(201,145,58,0.08)]"
+                : "surface hover:border-[rgba(212,175,100,0.2)]"
+            }`}
+            style={{ color: showFilters ? "#e8b96a" : "#a89070" }}>
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="hidden sm:inline">Filter</span>
+            {hasFilters && <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#c9913a" }} />}
+          </button>
         </div>
+
+        {showFilters && (
+          <div className="surface-raised rounded-xl p-4 flex flex-wrap gap-3 items-center"
+            style={{ borderColor: "rgba(212,175,100,0.12)" }}>
+            {[
+              { label: "Genre",    value: genre,     setter: setGenre,     options: GENRES },
+              { label: "Tone",     value: sentiment, setter: setSentiment, options: SENTIMENTS },
+            ].map(f => (
+              <select
+                key={f.label}
+                value={f.value}
+                onChange={e => { f.setter(e.target.value); setPage(1); }}
+                className="tome-input rounded-lg px-3 py-2 text-sm bg-transparent"
+                style={{ minWidth: "130px" }}>
+                <option value="" className="bg-[#0d0b09]">All {f.label}s</option>
+                {f.options.map(o => <option key={o} value={o} className="bg-[#0d0b09] capitalize">{o}</option>)}
+              </select>
+            ))}
+            <select
+              value={ordering}
+              onChange={e => { setOrdering(e.target.value); setPage(1); }}
+              className="tome-input rounded-lg px-3 py-2 text-sm bg-transparent">
+              <option value="-created_at" className="bg-[#0d0b09]">Recently acquired</option>
+              <option value="-rating"     className="bg-[#0d0b09]">Highest rated</option>
+              <option value="title"       className="bg-[#0d0b09]">Alphabetical</option>
+              <option value="price"       className="bg-[#0d0b09]">Price ascending</option>
+            </select>
+            {hasFilters && (
+              <button onClick={clearFilters}
+                className="ml-auto flex items-center gap-1 font-serif text-xs transition-colors"
+                style={{ color: "#8b2635" }}>
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Grid */}
+      {/* ── Grid ── */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden animate-pulse">
-              <div className="aspect-[2/3] bg-gray-800" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 bg-gray-800 rounded w-3/4" />
-                <div className="h-3 bg-gray-800 rounded w-1/2" />
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : books.length === 0 ? (
-        <div className="text-center py-20 text-gray-500">
-          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-lg">No books found.</p>
-          <p className="text-sm mt-1">Try scraping or clearing filters.</p>
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <span className="text-4xl" style={{ color: "#4a3f30" }}>❧</span>
+          <p className="font-display text-base" style={{ color: "#4a3f30" }}>No volumes found</p>
+          {hasFilters && (
+            <button onClick={clearFilters} className="font-serif text-sm" style={{ color: "#c9913a" }}>
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {books.map(book => <BookCard key={book.id} book={book} />)}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+          {books.map(b => <BookCard key={b.id} book={b} />)}
         </div>
       )}
 
-      {/* Pagination */}
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-sm text-white rounded-lg transition-colors">Previous</button>
-          <span className="text-gray-400 text-sm">Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-sm text-white rounded-lg transition-colors">Next</button>
+        <div className="flex items-center justify-center gap-4 pt-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="surface rounded-lg px-5 py-2 font-serif text-sm transition-all hover:border-[rgba(212,175,100,0.2)] disabled:opacity-30"
+            style={{ color: "#a89070" }}>
+            ← Prev
+          </button>
+          <span className="font-serif text-sm" style={{ color: "#4a3f30" }}>
+            <span style={{ color: "#c9913a" }}>{page}</span> of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="surface rounded-lg px-5 py-2 font-serif text-sm transition-all hover:border-[rgba(212,175,100,0.2)] disabled:opacity-30"
+            style={{ color: "#a89070" }}>
+            Next →
+          </button>
         </div>
       )}
     </div>

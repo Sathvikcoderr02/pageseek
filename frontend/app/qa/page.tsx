@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Send, BookOpen, ArrowLeft, Loader2, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { api, AskResponse, Source } from "@/lib/api";
 
 interface Message {
@@ -13,74 +13,82 @@ interface Message {
   loading?: boolean;
 }
 
-const SAMPLE_QUESTIONS = [
-  "What mystery books are in the collection?",
-  "Recommend a book with a positive tone",
-  "Which books are about philosophy?",
-  "What is the highest rated book?",
-  "Tell me about books with dark themes",
+const SAMPLES = [
+  "What mystery volumes are in the collection?",
+  "Which book holds the highest rating?",
+  "Recommend something on philosophy",
+  "What books carry a dark, negative tone?",
+  "Tell me about science fiction titles",
 ];
 
-function SourceCard({ source, index }: { source: Source; index: number }) {
-  const [expanded, setExpanded] = useState(false);
+function SourceCard({ s, i }: { s: Source; i: number }) {
+  const [open, setOpen] = useState(false);
+  const pct = Math.round((1 - s.distance) * 100);
   return (
-    <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-3 text-xs">
+    <div className="rounded-lg p-2.5 font-serif text-sm"
+      style={{ background: "rgba(13,11,9,0.8)", border: "1px solid rgba(212,175,100,0.08)" }}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0 text-[10px]">
-            {index}
+          <span className="font-display text-[10px] font-bold flex-shrink-0" style={{ color: "#c9913a" }}>
+            [{i}]
           </span>
-          <Link href={`/books/${source.book_id}`}
-            className="text-indigo-300 hover:text-indigo-200 font-medium truncate transition-colors">
-            {source.book_title}
+          <Link href={`/books/${s.book_id}`}
+            className="truncate hover:underline" style={{ color: "#e8b96a" }}>
+            {s.book_title}
           </Link>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-gray-500">
-            {(1 - source.distance).toFixed(0)}% match
-          </span>
-          <button onClick={() => setExpanded(v => !v)} className="text-gray-400 hover:text-white transition-colors">
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        <div className="flex items-center gap-2 flex-shrink-0" style={{ color: "#4a3f30" }}>
+          <span className="text-xs">{pct}% match</span>
+          <button onClick={() => setOpen(v => !v)} className="hover:text-[#a89070] transition-colors">
+            {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
         </div>
       </div>
-      {expanded && (
-        <p className="text-gray-400 mt-2 leading-relaxed border-t border-gray-700 pt-2">
-          {source.chunk_text}
+      {open && (
+        <p className="mt-2 pt-2 font-serif text-sm leading-relaxed"
+          style={{ borderTop: "1px solid rgba(212,175,100,0.06)", color: "#6b5d4f" }}>
+          {s.chunk_text}
         </p>
       )}
     </div>
   );
 }
 
-function AssistantMessage({ msg }: { msg: Message }) {
-  const [showSources, setShowSources] = useState(false);
+function OracleMessage({ msg }: { msg: Message }) {
+  const [showSrc, setShowSrc] = useState(false);
   return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 mt-1">
-        <BookOpen className="w-4 h-4 text-white" />
+    <div className="flex gap-3 unfurl">
+      <div className="flex-shrink-0 w-7 h-7 rounded flex items-center justify-center text-base mt-0.5"
+        style={{ background: "rgba(201,145,58,0.1)", border: "1px solid rgba(201,145,58,0.2)", color: "#c9913a" }}>
+        ✦
       </div>
-      <div className="flex-1 space-y-2 min-w-0">
+      <div className="flex-1 space-y-2">
         {msg.loading ? (
-          <div className="flex items-center gap-2 text-gray-400 text-sm py-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Searching books and generating answer…
+          <div className="flex items-center gap-1.5 py-2">
+            <span className="font-serif text-xs mr-1" style={{ color: "#4a3f30" }}>The Oracle ponders</span>
+            <span className="w-1.5 h-3 rounded-sm q1" style={{ background: "#c9913a" }} />
+            <span className="w-1.5 h-3 rounded-sm q2" style={{ background: "#c9913a" }} />
+            <span className="w-1.5 h-3 rounded-sm q3" style={{ background: "#c9913a" }} />
           </div>
         ) : (
           <>
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-tl-none px-4 py-3">
-              <p className="text-gray-100 text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+            <div className="rounded-xl rounded-tl-none p-4"
+              style={{ background: "rgba(22,18,16,0.9)", border: "1px solid rgba(212,175,100,0.08)" }}>
+              <p className="font-serif leading-relaxed whitespace-pre-wrap" style={{ color: "#c8b890", fontSize: "15px" }}>
+                {msg.content}
+              </p>
             </div>
             {msg.sources && msg.sources.length > 0 && (
               <div>
-                <button onClick={() => setShowSources(v => !v)}
-                  className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                  {showSources ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  {showSources ? "Hide" : "Show"} {msg.sources.length} source{msg.sources.length > 1 ? "s" : ""}
+                <button onClick={() => setShowSrc(v => !v)}
+                  className="flex items-center gap-1 font-serif text-xs transition-colors"
+                  style={{ color: "#4a3f30" }}>
+                  {showSrc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  {msg.sources.length} source{msg.sources.length > 1 ? "s" : ""} cited
                 </button>
-                {showSources && (
-                  <div className="mt-2 space-y-2">
-                    {msg.sources.map((s, i) => <SourceCard key={i} source={s} index={i + 1} />)}
+                {showSrc && (
+                  <div className="mt-2 space-y-1.5">
+                    {msg.sources.map((s, i) => <SourceCard key={i} s={s} i={i + 1} />)}
                   </div>
                 )}
               </div>
@@ -93,132 +101,109 @@ function AssistantMessage({ msg }: { msg: Message }) {
 }
 
 export default function QAPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [msgs, setMsgs]   = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(() => Math.random().toString(36).slice(2));
+  const [sessionId] = useState(() => crypto.randomUUID());
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  const sendMessage = async (question: string) => {
-    if (!question.trim() || loading) return;
-
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: question };
-    const loadingMsg: Message = { id: Date.now().toString() + "l", role: "assistant", content: "", loading: true };
-
-    setMessages(prev => [...prev, userMsg, loadingMsg]);
+  const send = async (q: string) => {
+    if (!q.trim() || loading) return;
+    const uid = Date.now().toString();
+    const lid = uid + "l";
+    setMsgs(m => [...m,
+      { id: uid, role: "user",      content: q },
+      { id: lid, role: "assistant", content: "", loading: true },
+    ]);
     setInput("");
     setLoading(true);
-
     try {
-      const res: AskResponse = await api.rag.ask(question, sessionId);
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === loadingMsg.id
-            ? { ...m, content: res.answer, sources: res.sources, loading: false }
-            : m
-        )
-      );
-    } catch (e) {
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === loadingMsg.id
-            ? { ...m, content: "Sorry, something went wrong. Please try again.", loading: false }
-            : m
-        )
-      );
+      const res: AskResponse = await api.rag.ask(q, sessionId);
+      setMsgs(m => m.map(x => x.id === lid ? { ...x, content: res.answer, sources: res.sources, loading: false } : x));
+    } catch {
+      setMsgs(m => m.map(x => x.id === lid ? { ...x, content: "The Oracle is silent. Please try again.", loading: false } : x));
     } finally {
       setLoading(false);
       inputRef.current?.focus();
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(input);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
-  };
-
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-3xl mx-auto">
+    <div className="flex flex-col" style={{ height: "calc(100vh - 9rem)" }}>
+
       {/* Header */}
-      <div className="flex items-center gap-4 mb-4">
-        <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Library
-        </Link>
-        <div className="h-4 w-px bg-gray-700" />
-        <h1 className="text-lg font-bold text-white flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-indigo-400" /> Book Q&amp;A
-        </h1>
+      <div className="flex items-center justify-between pb-4 mb-4 flex-shrink-0"
+        style={{ borderBottom: "1px solid rgba(212,175,100,0.08)" }}>
+        <div className="flex items-center gap-3">
+          <Link href="/" style={{ color: "#4a3f30" }} className="hover:text-[#a89070] transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <span className="font-display text-base font-bold" style={{ color: "#f0e2c0" }}>Consult the Oracle</span>
+        </div>
+        <p className="chapter-num text-[9px]">— RAG-Powered —</p>
       </div>
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pb-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center gap-6">
-            <div className="w-16 h-16 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-indigo-400" />
-            </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto space-y-5 pb-4">
+        {msgs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-7 text-center">
             <div>
-              <h2 className="text-xl font-bold text-white">Ask about your books</h2>
-              <p className="text-gray-400 text-sm mt-1">Powered by RAG — answers with source citations</p>
+              <div className="text-5xl mb-3" style={{ color: "#c9913a" }}>✦</div>
+              <h2 className="font-display text-xl font-bold" style={{ color: "#f0e2c0" }}>Ask the Oracle</h2>
+              <p className="font-serif text-sm mt-1" style={{ color: "#4a3f30" }}>
+                Your questions are answered from the catalogue with cited sources
+              </p>
             </div>
-            <div className="space-y-2 w-full max-w-md">
-              <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Try asking</p>
-              {SAMPLE_QUESTIONS.map(q => (
-                <button key={q} onClick={() => sendMessage(q)}
-                  className="w-full text-left bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-indigo-500/40 text-gray-300 text-sm px-4 py-2.5 rounded-lg transition-all">
+            <div className="flex flex-col gap-2 w-full max-w-md">
+              <p className="chapter-num text-[9px] mb-1">— Suggested Inquiries —</p>
+              {SAMPLES.map(q => (
+                <button key={q} onClick={() => send(q)}
+                  className="text-left font-serif text-sm px-4 py-3 rounded-xl transition-all hover:border-[rgba(201,145,58,0.25)]"
+                  style={{ background: "rgba(13,11,9,0.8)", border: "1px solid rgba(212,175,100,0.07)", color: "#6b5d4f" }}>
                   {q}
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <>
-            {messages.map(msg => (
-              msg.role === "user" ? (
-                <div key={msg.id} className="flex justify-end">
-                  <div className="bg-indigo-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-sm max-w-xs md:max-w-md leading-relaxed">
-                    {msg.content}
-                  </div>
-                </div>
-              ) : (
-                <AssistantMessage key={msg.id} msg={msg} />
-              )
-            ))}
-            <div ref={bottomRef} />
-          </>
+          msgs.map(m => m.role === "user" ? (
+            <div key={m.id} className="flex justify-end unfurl">
+              <div className="font-serif text-sm px-4 py-3 rounded-xl rounded-tr-none max-w-sm"
+                style={{ background: "rgba(22,18,16,0.9)", border: "1px solid rgba(212,175,100,0.1)", color: "#f0e2c0" }}>
+                {m.content}
+              </div>
+            </div>
+          ) : <OracleMessage key={m.id} msg={m} />)
         )}
+        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-800 pt-4">
-        <form onSubmit={handleSubmit} className="flex gap-3 items-end">
-          <div className="flex-1 bg-gray-900 border border-gray-700 rounded-xl focus-within:border-indigo-500 transition-colors">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about the books…"
-              rows={1}
-              className="w-full bg-transparent text-white placeholder-gray-500 text-sm px-4 py-3 resize-none focus:outline-none max-h-32"
-              style={{ height: "auto" }}
-            />
-          </div>
-          <button type="submit" disabled={loading || !input.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white p-3 rounded-xl transition-colors flex-shrink-0">
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+      <div className="flex-shrink-0 pt-4" style={{ borderTop: "1px solid rgba(212,175,100,0.08)" }}>
+        <div className="flex gap-2 items-end">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+            placeholder="Address your inquiry to the Oracle…"
+            rows={1}
+            className="tome-input flex-1 rounded-xl px-4 py-3 resize-none"
+            style={{ fontSize: "15px" }}
+          />
+          <button
+            onClick={() => send(input)}
+            disabled={loading || !input.trim()}
+            className="btn-gold flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed">
+            <Send className="w-4 h-4" />
           </button>
-        </form>
-        <p className="text-gray-600 text-xs mt-2 text-center">Press Enter to send · Shift+Enter for new line</p>
+        </div>
+        <p className="text-center font-serif text-xs mt-2" style={{ color: "#2d2520" }}>
+          Enter to send &ensp;·&ensp; Shift+Enter for new line
+        </p>
       </div>
     </div>
   );

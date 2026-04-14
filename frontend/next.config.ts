@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         hostname: "books.toscrape.com",
       },
     ],
-    unoptimized: true, // allow any image URL during development
+    unoptimized: true,
   },
 };
 

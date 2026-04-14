@@ -4,211 +4,197 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ExternalLink, BookOpen, Tag, ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, ExternalLink, BookOpen, MessageSquare } from "lucide-react";
 import { api, Book } from "@/lib/api";
 
-const sentimentColors: Record<string, string> = {
-  positive: "text-green-400 bg-green-400/10 border-green-400/20",
-  neutral: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
-  negative: "text-red-400 bg-red-400/10 border-red-400/20",
-};
-
-function StarRating({ rating }: { rating: string | null }) {
-  if (!rating) return null;
-  const num = parseFloat(rating);
-  return (
-    <div className="flex items-center gap-1.5">
-      {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`w-4 h-4 ${i <= Math.round(num) ? "fill-yellow-400 text-yellow-400" : "text-gray-700"}`} />
-      ))}
-      <span className="text-yellow-400 font-semibold ml-1">{num.toFixed(1)}</span>
-      <span className="text-gray-500 text-sm">/ 5</span>
-    </div>
-  );
-}
-
-function RecommendationCard({ book }: { book: Book }) {
-  return (
-    <Link href={`/books/${book.id}`}>
-      <div className="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all flex gap-3 p-3">
-        <div className="relative w-12 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-700">
-          {book.cover_image_url ? (
-            <Image src={book.cover_image_url} alt={book.title} fill className="object-cover" unoptimized />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-gray-500" />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white line-clamp-2 group-hover:text-indigo-300 transition-colors">{book.title}</p>
-          {book.author && <p className="text-gray-400 text-xs mt-0.5">{book.author}</p>}
-          {book.ai_genre && <span className="text-xs text-indigo-400 mt-1 block">{book.ai_genre}</span>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 export default function BookDetailPage() {
-  const params = useParams();
-  const id = Number(params.id);
-
+  const { id } = useParams();
   const [book, setBook] = useState<Book | null>(null);
-  const [recommendations, setRecommendations] = useState<Book[]>([]);
+  const [recs, setRecs]   = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    Promise.all([
-      api.books.detail(id),
-      api.books.recommendations(id),
-    ]).then(([bookData, recData]) => {
-      setBook(bookData);
-      setRecommendations(recData.recommendations);
-    }).catch(console.error)
+    Promise.all([api.books.detail(Number(id)), api.books.recommendations(Number(id))])
+      .then(([b, r]) => { setBook(b); setRecs(r.recommendations); })
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-6">
-        <div className="h-6 bg-gray-800 rounded w-32" />
-        <div className="flex gap-8">
-          <div className="w-48 h-72 bg-gray-800 rounded-xl flex-shrink-0" />
-          <div className="flex-1 space-y-4">
-            <div className="h-8 bg-gray-800 rounded w-3/4" />
-            <div className="h-4 bg-gray-800 rounded w-1/3" />
-            <div className="h-20 bg-gray-800 rounded" />
-          </div>
+  if (loading) return (
+    <div className="space-y-6 animate-pulse">
+      <div className="skeleton h-4 rounded w-20" />
+      <div className="flex gap-8">
+        <div className="skeleton w-44 h-64 rounded-xl flex-shrink-0" />
+        <div className="flex-1 space-y-3 pt-2">
+          <div className="skeleton h-8 rounded w-3/5" />
+          <div className="skeleton h-4 rounded w-1/3" />
+          <div className="skeleton h-20 rounded mt-4" />
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!book) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-gray-400">Book not found.</p>
-        <Link href="/" className="text-indigo-400 hover:text-indigo-300 text-sm mt-2 inline-block">← Back to library</Link>
-      </div>
-    );
-  }
+  if (!book) return (
+    <div className="py-20 text-center">
+      <p className="font-serif" style={{ color: "#4a3f30" }}>Volume not found in the catalogue.</p>
+      <Link href="/" className="font-serif text-sm mt-2 inline-block" style={{ color: "#c9913a" }}>← Return</Link>
+    </div>
+  );
+
+  const rating = book.rating ? parseFloat(book.rating) : null;
+  const sentClass = book.sentiment === "positive" ? "sent-positive" : book.sentiment === "negative" ? "sent-negative" : "sent-neutral";
 
   return (
-    <div className="space-y-8">
-      {/* Back */}
-      <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors w-fit">
-        <ArrowLeft className="w-4 h-4" /> Back to Library
+    <div className="space-y-10">
+      <Link href="/" className="inline-flex items-center gap-1.5 font-serif text-sm transition-colors hover:opacity-80"
+        style={{ color: "#4a3f30" }}>
+        <ArrowLeft className="w-3.5 h-3.5" /> Return to Catalogue
       </Link>
 
-      {/* Main detail */}
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Cover */}
-        <div className="flex-shrink-0">
-          <div className="relative w-48 h-72 rounded-xl overflow-hidden bg-gray-800 shadow-2xl shadow-black/50">
-            {book.cover_image_url ? (
-              <Image src={book.cover_image_url} alt={book.title} fill className="object-cover" unoptimized />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <BookOpen className="w-16 h-16 text-gray-600" />
+      {/* ── Main card ── */}
+      <div className="surface-raised rounded-2xl overflow-hidden" style={{ borderColor: "rgba(212,175,100,0.14)" }}>
+        <div className="flex flex-col md:flex-row">
+
+          {/* Cover column */}
+          <div className="flex-shrink-0 md:w-60 flex flex-col items-center gap-4 p-7"
+            style={{ background: "#0d0b09", borderRight: "1px solid rgba(212,175,100,0.08)" }}>
+            <div className="relative rounded-xl overflow-hidden shadow-2xl"
+              style={{ width: 150, height: 220, boxShadow: "0 20px 50px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,100,0.1)" }}>
+              {book.cover_image_url
+                ? <Image src={book.cover_image_url} alt={book.title} fill className="object-cover" unoptimized />
+                : <div className="w-full h-full flex items-center justify-center" style={{ background: "#161210" }}>
+                    <BookOpen className="w-12 h-12" style={{ color: "#4a3f30" }} />
+                  </div>}
+            </div>
+
+            {book.price && (
+              <div className="text-center">
+                <p className="font-display text-2xl font-black" style={{ color: "#e8b96a" }}>£{book.price}</p>
+                {book.availability && <p className="font-serif text-xs mt-0.5" style={{ color: "#2a6b78" }}>{book.availability}</p>}
               </div>
             )}
-          </div>
-          {book.price && (
-            <p className="text-center text-indigo-400 font-bold text-lg mt-3">£{book.price}</p>
-          )}
-          {book.availability && (
-            <p className="text-center text-green-400 text-xs mt-1">{book.availability}</p>
-          )}
-          {book.book_url && (
-            <a href={book.book_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 mt-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition-colors w-full">
-              <ExternalLink className="w-4 h-4" /> View on Site
-            </a>
-          )}
-          <Link href="/qa"
-            className="flex items-center justify-center gap-2 mt-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm px-4 py-2 rounded-lg transition-colors w-full">
-            <MessageSquare className="w-4 h-4" /> Ask about this book
-          </Link>
-        </div>
 
-        {/* Info */}
-        <div className="flex-1 space-y-5">
-          <div>
-            <h1 className="text-3xl font-bold text-white leading-tight">{book.title}</h1>
-            {book.author && <p className="text-gray-400 text-lg mt-1">by {book.author}</p>}
-          </div>
-
-          {/* Metadata pills */}
-          <div className="flex flex-wrap gap-2">
-            {book.ai_genre && (
-              <span className="bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-sm px-3 py-1 rounded-full">
-                {book.ai_genre}
-              </span>
-            )}
-            {book.genre && book.genre !== book.ai_genre && (
-              <span className="bg-gray-800 text-gray-300 border border-gray-700 text-sm px-3 py-1 rounded-full">
-                {book.genre}
-              </span>
-            )}
-            {book.sentiment && (
-              <span className={`border text-sm px-3 py-1 rounded-full capitalize ${sentimentColors[book.sentiment] || ""}`}>
-                {book.sentiment} tone
-              </span>
-            )}
-            {book.is_embedded && (
-              <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-sm px-3 py-1 rounded-full">
-                RAG Indexed
-              </span>
-            )}
-          </div>
-
-          <StarRating rating={book.rating} />
-
-          {/* AI Summary */}
-          {book.summary && (
-            <div className="bg-indigo-950/40 border border-indigo-500/20 rounded-xl p-4">
-              <h3 className="text-indigo-300 font-semibold text-sm mb-2 flex items-center gap-2">
-                ✨ AI Summary
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">{book.summary}</p>
+            <div className="w-full space-y-2">
+              {book.book_url && (
+                <a href={book.book_url} target="_blank" rel="noopener noreferrer"
+                  className="btn-gold w-full text-xs font-display uppercase tracking-widest py-2.5 rounded-lg flex items-center justify-center gap-2">
+                  <ExternalLink className="w-3.5 h-3.5" /> Acquire Volume
+                </a>
+              )}
+              <Link href="/qa"
+                className="w-full font-serif text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all hover:border-[rgba(212,175,100,0.2)]"
+                style={{ border: "1px solid rgba(212,175,100,0.1)", color: "#a89070" }}>
+                <MessageSquare className="w-3.5 h-3.5" /> Ask the Oracle
+              </Link>
             </div>
-          )}
+          </div>
 
-          {/* Description */}
-          {book.description && (
+          {/* Info column */}
+          <div className="flex-1 p-7 space-y-6 min-w-0">
+            {/* Title */}
             <div>
-              <h3 className="text-white font-semibold mb-2">Description</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{book.description}</p>
+              <p className="chapter-num text-[9px] mb-2">— Volume Details —</p>
+              <h1 className="font-display text-3xl font-black leading-tight" style={{ color: "#f0e2c0" }}>
+                {book.title}
+              </h1>
+              {book.author && (
+                <p className="font-serif text-base mt-1.5" style={{ color: "#a89070" }}>
+                  by <span style={{ color: "#c9913a" }}>{book.author}</span>
+                </p>
+              )}
             </div>
-          )}
 
-          {/* Recommendation Tags */}
-          {book.tags && book.tags.length > 0 && (
-            <div>
-              <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-indigo-400" /> Themes
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {book.tags.map(t => (
-                  <span key={t.id} className="bg-gray-800 border border-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full">
-                    {t.tag}
-                  </span>
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              {book.ai_genre && (
+                <span className="genre-badge px-3 py-1 rounded-sm font-display text-xs uppercase tracking-wider">
+                  {book.ai_genre}
+                </span>
+              )}
+              {book.sentiment && (
+                <span className={`${sentClass} border text-xs px-3 py-1 rounded-sm font-serif capitalize`}>
+                  {book.sentiment} tone
+                </span>
+              )}
+              {book.is_embedded && (
+                <span className="font-serif text-xs px-3 py-1 rounded-sm border"
+                  style={{ background: "rgba(42,107,120,0.1)", borderColor: "rgba(42,107,120,0.25)", color: "#7dd3e0" }}>
+                  ◎ Oracle Indexed
+                </span>
+              )}
+            </div>
+
+            {/* Stars */}
+            {rating && (
+              <div className="flex items-center gap-1">
+                {[1,2,3,4,5].map(i => (
+                  <span key={i} className={`text-base ${i <= Math.round(rating) ? "star-filled" : "star-empty"}`}>★</span>
                 ))}
+                <span className="font-serif text-sm ml-1.5" style={{ color: "#a89070" }}>{rating.toFixed(1)} / 5</span>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* AI Summary */}
+            {book.summary && (
+              <div className="rounded-xl p-4" style={{ background: "rgba(201,145,58,0.05)", border: "1px solid rgba(201,145,58,0.12)" }}>
+                <p className="chapter-num text-[9px] mb-2">✦ Oracle's Summary</p>
+                <p className="font-serif text-base leading-relaxed" style={{ color: "#c8b890", fontSize: "15px" }}>
+                  {book.summary}
+                </p>
+              </div>
+            )}
+
+            {/* Description */}
+            {book.description && (
+              <div>
+                <p className="chapter-num text-[9px] mb-2">— Publisher's Description —</p>
+                <p className="font-serif leading-relaxed" style={{ color: "#6b5d4f", fontSize: "15px" }}>
+                  {book.description}
+                </p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {book.tags?.length > 0 && (
+              <div>
+                <p className="chapter-num text-[9px] mb-2">— Themes —</p>
+                <div className="flex flex-wrap gap-2">
+                  {book.tags.map(t => (
+                    <span key={t.id}
+                      className="font-serif text-xs px-2.5 py-1 rounded-sm transition-colors cursor-default hover:border-[rgba(212,175,100,0.2)]"
+                      style={{ border: "1px solid rgba(212,175,100,0.08)", color: "#6b5d4f" }}>
+                      {t.tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Recommendations */}
-      {recommendations.length > 0 && (
+      {/* ── Recommendations ── */}
+      {recs.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-white mb-4">You might also like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {recommendations.map(r => <RecommendationCard key={r.id} book={r} />)}
+          <div className="ornament mb-5 font-display text-[9px] tracking-widest">Similar Volumes</div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {recs.map(r => (
+              <Link key={r.id} href={`/books/${r.id}`}>
+                <div className="book-card surface rounded-xl overflow-hidden">
+                  <div className="relative" style={{ aspectRatio: "2/3", background: "#0d0b09" }}>
+                    {r.cover_image_url
+                      ? <Image src={r.cover_image_url} alt={r.title} fill className="object-cover" unoptimized />
+                      : <div className="w-full h-full" style={{ background: "#161210" }} />}
+                  </div>
+                  <div className="p-2">
+                    <p className="font-display text-[11px] font-bold line-clamp-2 leading-tight" style={{ color: "#f0e2c0" }}>{r.title}</p>
+                    {r.ai_genre && <p className="font-serif text-[10px] mt-0.5" style={{ color: "#c9913a" }}>{r.ai_genre}</p>}
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}

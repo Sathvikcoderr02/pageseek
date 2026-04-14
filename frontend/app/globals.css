@@ -1,26 +1,219 @@
 @import "tailwindcss";
+@import "@fontsource/playfair-display/400.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/playfair-display/900.css";
+@import "@fontsource/crimson-pro/400.css";
+@import "@fontsource/crimson-pro/600.css";
 
+/* ── Design Tokens ─────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink:       #0d0b09;
+  --ink-deep:  #080705;
+  --surface:   #161210;
+  --surface-2: #1e1915;
+  --border:    rgba(212, 175, 100, 0.10);
+  --border-2:  rgba(212, 175, 100, 0.18);
+  --parchment: #f0e2c0;
+  --parchment-dim: #a89070;
+  --parchment-faint: #4a3f30;
+  --gold:      #c9913a;
+  --gold-light:#e8b96a;
+  --seal:      #8b2635;
+  --seal-dim:  #5a1825;
+  --teal:      #2a6b78;
+  --teal-light:#3d8f9e;
+  --glow-gold: rgba(201,145,58,0.15);
+  --glow-seal: rgba(139,38,53,0.2);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+* { box-sizing: border-box; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--parchment-dim);
+  font-family: 'Crimson Pro', 'Georgia', serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+.font-display {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+}
+.font-serif {
+  font-family: 'Crimson Pro', 'Georgia', serif;
+}
+
+/* ── Grain texture ──────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.6;
+}
+
+/* ── Surfaces ────────────────────────────────────────────────── */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.surface-raised {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+}
+
+/* ── Ornamental divider ──────────────────────────────────────── */
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--parchment-faint);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.ornament::before,
+.ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-2), transparent);
+}
+
+/* ── Book card ───────────────────────────────────────────────── */
+.book-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+.book-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(212,175,100,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.book-card:hover {
+  transform: translateY(-5px) rotate(-0.3deg);
+  border-color: var(--border-2) !important;
+  box-shadow:
+    0 20px 50px -10px rgba(0,0,0,0.7),
+    0 0 0 1px var(--border-2),
+    0 0 30px -5px var(--glow-gold);
+}
+
+/* ── Gold accent button ──────────────────────────────────────── */
+.btn-gold {
+  background: linear-gradient(135deg, #c9913a 0%, #a07028 100%);
+  color: var(--ink-deep);
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(232,185,106,0.3);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px -2px rgba(201,145,58,0.3);
+}
+.btn-gold:hover {
+  background: linear-gradient(135deg, #e8b96a 0%, #c9913a 100%);
+  box-shadow: 0 4px 20px -4px rgba(201,145,58,0.5);
+}
+
+/* ── Wax seal button ─────────────────────────────────────────── */
+.btn-seal {
+  background: var(--seal-dim);
+  border: 1px solid rgba(139,38,53,0.4);
+  color: #f4b8c0;
+  transition: all 0.2s ease;
+}
+.btn-seal:hover {
+  background: var(--seal);
+  box-shadow: 0 0 20px -4px var(--glow-seal);
+}
+
+/* ── Input ───────────────────────────────────────────────────── */
+.tome-input {
+  background: var(--ink-deep);
+  border: 1px solid var(--border);
+  color: var(--parchment);
+  font-family: 'Crimson Pro', serif;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.tome-input::placeholder { color: var(--parchment-faint); }
+.tome-input:focus {
+  outline: none;
+  border-color: rgba(201,145,58,0.4);
+  box-shadow: 0 0 0 3px rgba(201,145,58,0.08), 0 0 20px -5px rgba(201,145,58,0.15);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--parchment-faint); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ── Skeleton ─────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.02) 0%,
+    rgba(212,175,100,0.06) 50%,
+    rgba(255,255,255,0.02) 100%);
+  background-size: 600px 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ── Chat message ─────────────────────────────────────────────── */
+@keyframes unfurl {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.unfurl { animation: unfurl 0.3s ease forwards; }
+
+/* ── Typing dots ──────────────────────────────────────────────── */
+@keyframes quill {
+  0%, 100% { opacity: 0.2; transform: scaleY(0.6); }
+  50%       { opacity: 1;   transform: scaleY(1); }
+}
+.q1 { animation: quill 1.2s ease-in-out 0.0s infinite; }
+.q2 { animation: quill 1.2s ease-in-out 0.2s infinite; }
+.q3 { animation: quill 1.2s ease-in-out 0.4s infinite; }
+
+/* ── Genre badge ──────────────────────────────────────────────── */
+.genre-badge {
+  background: rgba(201,145,58,0.12);
+  border: 1px solid rgba(201,145,58,0.22);
+  color: var(--gold-light);
+  font-family: 'Playfair Display', serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+/* ── Rating star ──────────────────────────────────────────────── */
+.star-filled  { color: var(--gold-light); fill: var(--gold-light); }
+.star-empty   { color: var(--parchment-faint); }
+
+/* ── Sentiment pills ─────────────────────────────────────────── */
+.sent-positive { background: rgba(42,107,120,0.15); border-color: rgba(42,107,120,0.3); color: #7dd3e0; }
+.sent-neutral  { background: rgba(74,63,48,0.4);    border-color: rgba(212,175,100,0.15); color: #a89070; }
+.sent-negative { background: rgba(90,24,37,0.3);    border-color: rgba(139,38,53,0.3);  color: #f4a8b2; }
+
+/* ── Chapter number decoration ────────────────────────────────── */
+.chapter-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--parchment-faint);
 }
