@@ -8,12 +8,15 @@ webdriver-manager==4.0.1
 beautifulsoup4==4.12.2
 requests==2.31.0
 chromadb==0.4.18
-sentence-transformers==2.2.2
+sentence-transformers==3.0.1
+huggingface_hub==0.24.6
+onnxruntime==1.19.2
 anthropic==0.7.8
 openai==1.55.3
 httpx==0.27.2
 torch==2.1.1
 transformers==4.35.2
+numpy<2
 Pillow==10.1.0
 django-extensions==3.2.3
 celery==5.3.4
