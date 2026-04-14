@@ -39,6 +39,19 @@ class Book(models.Model):
         return f"{self.title} — {self.author}"
 
 
+class RecommendationTag(models.Model):
+    """AI-generated tags used for book-to-book recommendations."""
+
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="tags")
+    tag = models.CharField(max_length=64)
+
+    class Meta:
+        unique_together = [("book", "tag")]
+
+    def __str__(self):
+        return f"{self.tag} → {self.book.title}"
+
+
 class BookChunk(models.Model):
     """Text chunks of a book used for RAG retrieval."""
 

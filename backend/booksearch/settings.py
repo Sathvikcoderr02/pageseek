@@ -125,7 +125,9 @@ CORS_ALLOW_CREDENTIALS = True
 CHROMA_DB_PATH = str(BASE_DIR / "chroma_db")
 
 # AI provider config
-AI_PROVIDER = os.getenv("AI_PROVIDER", "anthropic")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "openrouter")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct:free")
 LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")

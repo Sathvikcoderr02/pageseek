@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Book, BookChunk, ScrapeJob, ChatHistory
+from .models import Book, BookChunk, ScrapeJob, ChatHistory, RecommendationTag
 
 
 @admin.register(Book)
@@ -8,6 +8,12 @@ class BookAdmin(admin.ModelAdmin):
     list_filter = ["genre", "ai_genre", "sentiment", "is_embedded"]
     search_fields = ["title", "author", "description"]
     readonly_fields = ["created_at", "updated_at"]
+
+
+@admin.register(RecommendationTag)
+class RecommendationTagAdmin(admin.ModelAdmin):
+    list_display = ["tag", "book"]
+    search_fields = ["tag", "book__title"]
 
 
 @admin.register(BookChunk)
