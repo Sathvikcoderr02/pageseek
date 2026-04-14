@@ -11,7 +11,7 @@ A full-stack AI-powered book search and Q&A platform built with Django REST Fram
 | Layer | Technology |
 |-------|-----------|
 | Backend | Django 4.2, Django REST Framework |
-| Database | MySQL (metadata), ChromaDB (vectors) |
+| Database | PostgreSQL (metadata), ChromaDB (vectors) |
 | AI | Anthropic Claude / OpenAI / LM Studio |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
 | Scraping | Selenium + BeautifulSoup4 |
@@ -34,9 +34,6 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env            # fill in your credentials
-
-# Create MySQL database
-mysql -u root -p -e "CREATE DATABASE booksearch CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 python manage.py migrate
 python manage.py runserver
